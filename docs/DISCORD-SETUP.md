@@ -65,3 +65,10 @@ If you get **"Private application cannot have a default authorization link"**: g
 5. Approve the code: `./scripts/pair.sh <code>`
 
 After pairing, your Discord user ID is stored in `commands.ownerAllowFrom`. Only you can issue commands going forward.
+
+## 7. (Optional) Rename the bot
+
+The default bot username is `bot<APP_ID>` which isn't great. Two places to rename:
+
+- **Username (global handle, no spaces)**: dev portal → **Bot** tab → **Username** field. Save. Takes a minute to propagate.
+- **Server nickname (display name in your server, spaces allowed)**: in your Discord server, right-click the bot in the member list → **Edit Server Profile** → set nickname. Instant.

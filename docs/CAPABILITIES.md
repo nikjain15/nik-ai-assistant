@@ -55,45 +55,146 @@ Lets the bot pull a single URL's contents without launching a browser. Lighter t
 
 Headless Chromium for pages that require rendering or interaction. Heavier and higher risk than fetch — pages can carry prompt-injection content. Combine with `tools.exec.ask: "always"` so any side-effect actions still need approval.
 
-Install Chromium inside the VM:
+**Do not** use `apt-get install chromium-browser` on Ubuntu 24.04 — it installs the snap version, which AppArmor confines from writing to OpenClaw's profile directory. Use Playwright's bundled Chromium instead.
+
+First open outbound port 80 in the VM (apt repos use HTTP):
 
 ```bash
-sudo apt-get install -y chromium-browser
+sudo ufw allow out 80/tcp
 ```
 
-Enable the browser tool:
+Install Chromium via Playwright:
+
+```bash
+sudo npx -y playwright install --with-deps chromium
+```
+
+This puts Chromium under `~/.cache/ms-playwright/chromium-<build>/chrome-linux/chrome`. Note the path — you'll pin it in config.
+
+Then patch the config to enable the tool, point at the Playwright binary, and disable Chromium's namespace sandbox (which fails inside the VM):
 
 ```json5
-{ tools: { alsoAllow: ["browser"] } }
+{
+  tools: { alsoAllow: ["browser"] },
+  browser: {
+    enabled: true,
+    headless: true,
+    noSandbox: true,
+    executablePath: "/home/<user>/.cache/ms-playwright/chromium-1217/chrome-linux/chrome"
+  }
+}
 ```
+
+Replace `<user>` with your VM username and `1217` with the actual build number from your install.
+
+Restart the gateway. Test with: *"Open https://example.com and tell me what's on the page."*
 
 ### Cron / scheduled tasks
 
 Run jobs on a schedule (e.g. "every weekday at 8am, summarize unread Gmail and DM me").
 
+Enable in config:
+
 ```json5
 { cron: { enabled: true, maxConcurrentRuns: 2 } }
 ```
 
-Manage jobs with `openclaw cron` subcommands.
+Restart the gateway, then create jobs by DMing the bot in plain English:
+
+> *"Schedule a job called 'morning-brief' to DM me a 3-bullet summary of overnight tech news every weekday at 8am."*
+
+Or via CLI:
+
+```bash
+openclaw cron list                                  # list active jobs
+openclaw cron remove <job-id>                       # delete a job
+openclaw cron run <job-id>                          # run on demand
+openclaw cron logs <job-id>                         # see past runs
+```
+
+`maxConcurrentRuns` is a backstop — if more jobs fire than this at once, the rest queue.
 
 ### Multiple agents (roles)
 
-Define separate agents with their own workspaces, each appearing as a separate context. Useful for splitting `writer` / `researcher` / `planner` workloads so memory and files don't bleed across roles.
+Define separate agents with their own workspaces, identities, and tool policies. Useful for splitting `writer` / `researcher` / `planner` workloads so memory, files, and behavior don't bleed across roles.
+
+There are three layers to a role: **identity** (personality + system prompt), **skills/tools** (what it can do), and **routing** (which DM goes to which agent).
+
+#### 1. Create the agent
 
 ```bash
 openclaw agents add writer \
   --workspace /home/<user>/workspace/writer \
   --model anthropic/claude-sonnet-4-5 \
   --non-interactive
-
-openclaw agents add researcher \
-  --workspace /home/<user>/workspace/researcher \
-  --model anthropic/claude-sonnet-4-5 \
-  --non-interactive
 ```
 
-List with `openclaw agents list`. Customize each role's behavior with system prompts via `openclaw agents set-identity`.
+The workspace folder appears on your Mac at `~/nik-ai-assistant-workspace/<name>/` via the virtiofs mount.
+
+#### 2. Set identity (system prompt)
+
+Each agent reads a markdown file as its system prompt:
+
+```
+~/.openclaw/agents/<name>/agent/identity.md
+```
+
+Example for a `researcher`:
+
+```markdown
+# Researcher
+
+You find sources, compare claims, and synthesize. Always cite URLs.
+Flag contradictions and uncertainty. Default output: numbered findings
+with sources, then a 3-sentence synthesis.
+```
+
+For display-level identity (name, emoji, theme color):
+
+```bash
+openclaw agents set-identity researcher
+```
+
+#### 3. Per-agent tool overrides (optional)
+
+Tighten or loosen tools per agent. Examples:
+
+```bash
+# Writer: no web access at all
+openclaw config set agents.entries.writer.tools.web.search.enabled false
+openclaw config set agents.entries.writer.tools.web.fetch.enabled false
+
+# Researcher: longer browser timeout
+openclaw config set agents.entries.researcher.browser.actionTimeoutMs 60000
+```
+
+#### 4. Routing — which DM goes where
+
+Route by keyword pattern so you don't bind/unbind manually:
+
+```bash
+# DMs starting with "research:" go to researcher
+openclaw agents bind researcher --channel discord --pattern "^research:"
+
+# DMs starting with "plan:" go to planner
+openclaw agents bind planner --channel discord --pattern "^plan:"
+
+# Anything else falls through to main
+```
+
+List + remove bindings:
+
+```bash
+openclaw agents bindings
+openclaw agents unbind researcher --channel discord
+```
+
+#### Manage agents
+
+```bash
+openclaw agents list                # list all agents
+openclaw agents delete <name>       # remove an agent (prompts for workspace cleanup)
+```
 
 ## Capabilities NOT included in this template
 
