@@ -6,17 +6,28 @@ A personal AI assistant you talk to through Discord DMs. Powered by [OpenClaw](h
 
 You DM a Discord bot. The bot is your AI assistant. It runs entirely on your laptop inside an isolated Linux VM, with strict permissions on what it can read, write, and execute. No cloud. No data leaves the VM except API calls to Anthropic and Discord.
 
-## What it can do today
+## Capabilities
+
+Baseline (always on):
 
 - Chat with you using Claude Sonnet 4.5
 - Read and write files in one workspace folder (and only that folder)
 - Ask for your approval (via DM prompt) before any write or edit
+- Persistent memory across sessions
+- Only the paired owner can issue commands
+
+Optional, you turn on per [docs/CAPABILITIES.md](docs/CAPABILITIES.md):
+
+- Web search (Tavily, Brave, or Exa)
+- Web fetch (read a single URL)
+- Web browser (Chromium-driven page navigation, headless)
+- Cron / scheduled tasks
+- Multiple agents (separate personas with separate workspaces, e.g. writer / researcher / planner)
 
 ## What it cannot do
 
-- Run shell commands (`exec` is denied)
+- Run shell commands (`exec` is denied by default)
 - Touch files outside its workspace
-- Browse the web
 - Talk to anyone but the paired owner
 
 ## Architecture
@@ -124,6 +135,7 @@ Anything the bot writes lands in `~/nik-ai-assistant-workspace/` on your Mac. Yo
 
 ## Documentation
 
+- [Capabilities](docs/CAPABILITIES.md) — full list and how to enable each
 - [Architecture](docs/ARCHITECTURE.md) — what runs where, threat model
 - [Hardening](docs/HARDENING.md) — what's locked down and why
 - [Discord setup](docs/DISCORD-SETUP.md) — Discord app + bot creation
