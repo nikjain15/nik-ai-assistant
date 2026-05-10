@@ -1,0 +1,44 @@
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img"
+    arch: "x86_64"
+  - location: "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-arm64.img"
+    arch: "aarch64"
+
+cpus: 2
+memory: "4GiB"
+disk: "30GiB"
+
+mounts:
+  - location: "~/nik-ai-assistant-workspace"
+    writable: true
+    mountPoint: "/home/linux.user/workspace"
+
+mountType: "virtiofs"
+mountInotify: false
+
+networks:
+  - lima: user-v2
+
+ssh:
+  loadDotSSHPubKeys: false
+  forwardAgent: false
+
+provision:
+  - mode: system
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      apt-get update
+      apt-get install -y curl ca-certificates gnupg ufw jq git fail2ban unattended-upgrades
+      dpkg-reconfigure -f noninteractive unattended-upgrades
+
+hostResolver:
+  enabled: true
+  ipv6: false
+
+portForwards:
+  - guestPort: 18789
+    hostIP: "127.0.0.1"
+    hostPort: 18789
+    proto: tcp
+

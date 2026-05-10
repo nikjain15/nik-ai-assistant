@@ -1,0 +1,31 @@
+# Secrets — never commit
+.env
+*.env
+!*.env.example
+*.token
+*.key
+*.pem
+
+# Runtime state
+*.log
+logs/
+.openclaw/
+openclaw.json
+!openclaw.json.template
+
+# Lima VM state
+.lima/
+lima-*.log
+
+# Workspace contents
+workspace/
+nik-ai-assistant-workspace/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor junk
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,54 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/home/linux.user/workspace",
+      "model": "anthropic/claude-sonnet-4-5"
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "port": 18789,
+    "bind": "loopback"
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "tools": {
+    "profile": "minimal",
+    "exec": {
+      "security": "deny",
+      "ask": "always",
+      "strictInlineEval": true
+    },
+    "fs": {
+      "workspaceOnly": true
+    }
+  },
+  "approvals": {
+    "exec": { "enabled": true, "mode": "session" },
+    "plugin": { "enabled": true, "mode": "session" }
+  },
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": { "source": "env", "provider": "default", "id": "DISCORD_BOT_TOKEN" },
+      "applicationId": "REPLACE_WITH_YOUR_DISCORD_APP_ID",
+      "groupPolicy": "allowlist",
+      "allowBots": false
+    }
+  },
+  "models": {
+    "providers": {
+      "anthropic": {
+        "baseUrl": "https://api.anthropic.com",
+        "apiKey": { "source": "env", "provider": "default", "id": "ANTHROPIC_API_KEY" },
+        "models": [
+          { "id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5", "api": "anthropic-messages" }
+        ]
+      }
+    }
+  },
+  "commands": {
+    "ownerAllowFrom": []
+  }
+}
